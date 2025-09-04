@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../../models/paper_model.dart';
-import '../../providers/paper_provider.dart';
 import '../../services/arxiv_api_service.dart';
+import '../../mock/mock_papers.dart';
+import '../../widgets/paper_card.dart';
+import '../../providers/paper_provider.dart';
 
 class PapersTab extends StatefulWidget {
   const PapersTab({super.key});
@@ -13,187 +16,122 @@ class PapersTab extends StatefulWidget {
 }
 
 class _PapersTabState extends State<PapersTab> {
-  final TextEditingController _searchController = TextEditingController();
   String? selectedCategory;
-  bool isLoading = false;
-  List<Paper> papers = [];
+  late Future<List<Paper>> papersFuture;
 
-  final apiService = ArxivApiService();
-
-
-  final Map<String, String> categoryImages = {
-    'AI': 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
-    'Physics': 'https://cdn-icons-png.flaticon.com/512/616/616655.png',
-    'Medicine': 'https://cdn-icons-png.flaticon.com/512/2966/2966489.png',
-    'Math': 'https://cdn-icons-png.flaticon.com/512/2921/2921222.png',
-    'Biology': 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
-    'misc': 'https://cdn-icons-png.flaticon.com/512/1829/1829586.png',
+  final Map<String, String> categoryLabels = {
+    'AI': 'Artificial Intelligence',
+    'Physics': 'Physics',
+    'Math': 'Mathematics',
+    'Biology': 'Biology',
+    'Medicine': 'Medicine',
   };
 
   @override
   void initState() {
     super.initState();
-    _fetchLatestPapers();
+    papersFuture = _loadPapers();
   }
 
-  Future<void> _fetchLatestPapers() async {
-    setState(() => isLoading = true);
-    final result = await apiService.fetchLatestPapers();
-    setState(() {
-      papers = result;
-      isLoading = false;
-    });
+  Future<List<Paper>> _loadPapers() async {
+    try {
+      final api = ArxivApiService();
+      final papers = await api.fetchPapers(category: selectedCategory);
+
+      if (papers.isEmpty) return mockPapers;
+
+      return papers.map((p) {
+        final hasFilter = selectedCategory != null && selectedCategory != 'all';
+        if (!hasFilter) {
+          // مفيش فلتر → نزود الصور حسب أول كاتيجوري
+          final imageUrl =
+          _getImageForCategory(p.categories.isNotEmpty ? p.categories.first : "");
+          return p.copyWith(imageUrl: imageUrl);
+        }
+        // فلتر متفعل → منغير صور
+        return p.copyWith(imageUrl: null);
+      }).toList();
+    } catch (_) {
+      return mockPapers;
+    }
   }
 
-  Future<void> _searchPapers() async {
-    setState(() => isLoading = true);
-    final result = await apiService.fetchPapers(
-      query: _searchController.text,
-      category: selectedCategory,
-    );
+  String? _getImageForCategory(String category) {
+    if (category.contains("cs.AI")) {
+      return "assets/images/ai.jpg";
+    } else if (category.contains("physics")) {
+      return "assets/images/physics.jpg";
+    } else if (category.contains("math")) {
+      return "assets/images/math.jpg";
+    } else if (category.contains("q-bio.BM") || category.contains("medicine")) {
+      return "assets/images/medicine.jpg";
+    } else if (category.contains("q-bio")) {
+      return "assets/images/biology.jpg";
+    }
+    return null;
+  }
+
+
+
+  void _onCategorySelected(String? category) {
     setState(() {
-      papers = result;
-      isLoading = false;
+      selectedCategory = category;
+      papersFuture = _loadPapers();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasFilter = selectedCategory != null || _searchController.text.isNotEmpty;
+    final hasFilter = selectedCategory != null && selectedCategory != 'all';
 
     return Column(
       children: [
-        // 🔍 Search Bar
-        Padding(
-          padding: const EdgeInsets.all(8.0),
+        // ===== الفلاتر (ChoiceChips) =====
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(8),
           child: Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search papers...',
-                    border: OutlineInputBorder(),
+              ChoiceChip(
+                label: Text("All".tr()),
+                selected: selectedCategory == null || selectedCategory == 'all',
+                onSelected: (_) => _onCategorySelected('all'),
+              ),
+              const SizedBox(width: 6),
+              ...categoryLabels.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(entry.value),
+                    selected: selectedCategory == entry.key,
+                    onSelected: (_) => _onCategorySelected(entry.key),
                   ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.blueAccent),
-                onPressed: _searchPapers,
-              ),
+                );
+              }),
             ],
           ),
         ),
 
-        // 📂 Category Filter
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: ['AI', 'Physics', 'Medicine', 'Math', 'Biology']
-                .map((cat) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: ChoiceChip(
-                label: Text(cat),
-                selected: selectedCategory == cat,
-                onSelected: (val) {
-                  setState(() {
-                    selectedCategory = val ? cat : null;
-                  });
-                  _searchPapers();
-                },
-              ),
-            ))
-                .toList(),
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        // 📄 Papers List
+        // ===== قائمة الأوراق =====
         Expanded(
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : papers.isEmpty
-              ? const Center(child: Text("No papers found"))
-              : ListView.builder(
-            itemCount: papers.length,
-            itemBuilder: (context, index) {
-              final paper = papers[index];
-              final imageUrl = categoryImages[paper.categories.first] ??
-                  categoryImages['misc']!;
+          child: FutureBuilder<List<Paper>>(
+            future: papersFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text("Error loading papers"));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(child: Text("No papers found"));
+              }
 
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 🖼️ صورة لو مفيش فلتر
-                      if (!hasFilter)
-                        Center(
-                          child: Image.network(
-                            imageUrl,
-                            height: 80,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      const SizedBox(height: 10),
-
-                      // 📌 Title
-                      Text(
-                        paper.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 👨‍🔬 Authors
-                      Text(
-                        "Authors: ${paper.authors.join(', ')}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 📅 Published Date
-                      Text(
-                        "Published: ${paper.publishedDate.toLocal().toString().split(' ')[0]}",
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 📝 Summary
-                      Text(
-                        paper.summary,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 🔗 Button to open details
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            // TODO: Navigate to details screen
-                          },
-                          child: const Text("Read More"),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+              final papers = snapshot.data!;
+              return ListView.builder(
+                itemCount: papers.length,
+                itemBuilder: (context, index) {
+                  final paper = papers[index];
+                  return PaperCard(paper: paper);
+                },
               );
             },
           ),
@@ -202,6 +140,10 @@ class _PapersTabState extends State<PapersTab> {
     );
   }
 }
+
+
+
+
 
 
 

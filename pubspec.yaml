@@ -29,6 +29,14 @@ flutter:
     - assets/langs/
 
 
+    - assets/images/ai.jpg
+    - assets/images/physics.jpg
+    - assets/images/math.jpg
+    - assets/images/biology.jpg
+    - assets/images/medicine.jpg
+
+
+
 
 
 

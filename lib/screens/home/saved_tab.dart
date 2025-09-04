@@ -20,7 +20,7 @@ class SavedTab extends StatelessWidget {
         itemCount: prov.savedPapers.length,
         itemBuilder: (_, i) => PaperCard(
           paper: prov.savedPapers[i],
-          showImage: false, // في المحفوظات هنخليها بدون صور
+          // showImage: false, // في المحفوظات هنخليها بدون صور
         ),
         separatorBuilder: (_, __) => const SizedBox(height: 10),
       ),

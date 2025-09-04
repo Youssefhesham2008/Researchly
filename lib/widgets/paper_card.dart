@@ -12,14 +12,10 @@ import '../screens/forum_post/forum_post_screen.dart';
 
 class PaperCard extends StatelessWidget {
   final Paper paper;
-  final bool showImage;
-  final String? imageUrl;
 
   const PaperCard({
     super.key,
     required this.paper,
-    this.showImage = true,
-    this.imageUrl,
   });
 
   @override
@@ -27,33 +23,36 @@ class PaperCard extends StatelessWidget {
     final saved = context.select<PaperProvider, bool>((p) => p.isSaved(paper));
 
     return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (showImage && imageUrl != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(imageUrl!, fit: BoxFit.cover),
-                ),
-              ),
-            if (showImage && imageUrl != null) const SizedBox(height: 10),
+            if (paper.imageUrl != null) _PaperImage(path: paper.imageUrl!),
+
+            if (paper.imageUrl != null) const SizedBox(height: 8),
+
             Text(
               paper.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text('${'by'.tr()} ${paper.authors.join(', ')}',
-                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
-            const SizedBox(height: 8),
+
             Text(
-              paper.summary.length > 220 ? '${paper.summary.substring(0, 220)}...' : paper.summary,
+              '${'by'.tr()} ${paper.authors.join(', ')}',
+              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              paper.summary.length > 200 ? '${paper.summary.substring(0, 200)}...' : paper.summary,
               style: TextStyle(color: Colors.white.withOpacity(0.9)),
             ),
             const SizedBox(height: 8),
+
             Wrap(
               spacing: 6,
               runSpacing: -8,
@@ -61,7 +60,8 @@ class PaperCard extends StatelessWidget {
                 return Chip(label: Text(c, style: const TextStyle(fontSize: 11)));
               }).toList(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
+
             Row(
               children: [
                 TextButton.icon(
@@ -113,4 +113,52 @@ class PaperCard extends StatelessWidget {
     );
   }
 }
+
+/// ويدجت صغيرة تعرض الصورة من assets أو من النت.
+/// إحنا هنا هنستعمل paths للـ assets (زي: assets/images/ai.jpg).
+class _PaperImage extends StatelessWidget {
+  final String path;
+  const _PaperImage({required this.path});
+
+  bool get _isNetwork => path.startsWith('http://') || path.startsWith('https://');
+
+  @override
+  Widget build(BuildContext context) {
+    final imageWidget = _isNetwork
+        ? Image.network(
+      path,
+      height: 140,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stack) => _fallback(),
+    )
+         :Image.asset(
+      path, // Example: assets/images/ai.jpg
+      height: 140,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stack) => _fallback(),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: imageWidget,
+      ),
+    );
+  }
+
+  Widget _fallback() {
+    return Container(
+      height: 140,
+      width: double.infinity,
+      color: Colors.grey[800],
+      alignment: Alignment.center,
+      child: const Icon(Icons.broken_image, color: Colors.white70, size: 40),
+    );
+  }
+}
+
+
 
