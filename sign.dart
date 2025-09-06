@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'profile.dart';
-import 'login.dart'; // استورد صفحة تسجيل الدخول
+import 'package:easy_localization/easy_localization.dart';
+
+import '../login/login_screen.dart';
 
 class SignPage extends StatefulWidget {
   const SignPage({super.key});
@@ -12,175 +13,108 @@ class SignPage extends StatefulWidget {
 class _SignPageState extends State<SignPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-
-  void _createAccount() {
-    final username = _usernameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-
-    if (username.isEmpty ||
-        email.isEmpty ||
-        phone.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill in all fields"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Passwords do not match"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // كل حاجة تمام → الانتقال لصفحة البروفايل
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProfilePage(
-          username: username,
-          email: email,
-          phone: phone,
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF073743),
+      backgroundColor: Colors.black26,
+      appBar: AppBar(
+        title: Text("sign_up".tr()),
+        backgroundColor: Colors.blueAccent,
+      ),
       body: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // اللوجو
-                Image.asset(
-                  "images/logo.png",
-                  height: 150,
-                ),
-                const SizedBox(height: 15),
-
-                const Text(
-                  "Sign in",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.redAccent,
+          child: Card(
+            elevation: 10,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            margin: const EdgeInsets.all(20),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "create_account".tr(),
+                    style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent),
                   ),
-                ),
-                const SizedBox(height: 25),
-
-                // حقول البيانات
-                _buildInput("Username", Icons.person, _usernameController),
-                const SizedBox(height: 15),
-                _buildInput("Email", Icons.email, _emailController),
-                const SizedBox(height: 15),
-                _buildInput("Phone Number", Icons.phone, _phoneController,
-                    keyboard: TextInputType.phone),
-                const SizedBox(height: 15),
-                _buildInput("Password", Icons.lock, _passwordController,
-                    obscure: true),
-                const SizedBox(height: 15),
-                _buildInput("Confirm Password", Icons.lock_outline,
-                    _confirmPasswordController,
-                    obscure: true),
-                const SizedBox(height: 30),
-
-                // زرار إنشاء الحساب
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _createAccount,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                    child: const Text(
-                      "Create Account",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(
+                      labelText: "username".tr(),
+                      prefixIcon: const Icon(Icons.person, color: Colors.blueAccent),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // النص الجديد: Already have an account
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: TextStyle(color: Colors.white70),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    decoration: InputDecoration(
+                      labelText: "email".tr(),
+                      prefixIcon: const Icon(Icons.email, color: Colors.blueAccent),
+                      border: const OutlineInputBorder(),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        // الانتقال إلى صفحة تسجيل الدخول
-                        Navigator.push(
+                  ),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: "password".tr(),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.blueAccent),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  // زر Create
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // هنا ممكن تضيف وظيفة إنشاء الحساب
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const LoginPage()),
+                              builder: (context) => const LoginScreen()),
                         );
+
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("account_created_success".tr()),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        });
                       },
-                      child: const Text(
-                        "Sign in",
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text("create".tr()),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 15),
+                  // زر العودة للـ Login
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
+                      );
+                    },
+                    child: Text(
+                      "already_have_account_login".tr(),
+                      style: const TextStyle(color: Colors.blueAccent),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // دالة إنشاء حقول الإدخال
-  Widget _buildInput(String label, IconData icon,
-      TextEditingController controller,
-      {bool obscure = false, TextInputType keyboard = TextInputType.text}) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboard,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.redAccent, size: 26),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.white70),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.redAccent),
-          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
