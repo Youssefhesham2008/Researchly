@@ -1,0 +1,39 @@
+name: untitled3
+description: SciSky prototype with arXiv + forums + easy_localization
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  provider: ^6.0.5
+  http: ^1.2.2
+  xml: ^6.5.0
+  shared_preferences: ^2.2.3
+  url_launcher: ^6.3.0
+  easy_localization: ^3.0.7
+  font_awesome_flutter: ^10.7.0
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/langs/
+    - images/
+
+
+
+
+
+
+
